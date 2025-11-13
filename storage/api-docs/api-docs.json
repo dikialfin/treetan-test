@@ -1,0 +1,237 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Treetan Test",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/payment": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Membuat Transaksi Baru dan Memproses Pembayaran",
+                "description": "Membuat entri transaksi dan detailnya, lalu memanggil gateway pembayaran pihak ketiga.",
+                "operationId": "3bf87a1d2db6171310016de0615a4707",
+                "requestBody": {
+                    "description": "Daftar produk yang akan dibeli.",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "products"
+                                ],
+                                "properties": {
+                                    "products": {
+                                        "description": "Daftar produk yang akan diproses. (Minimal 1 produk)",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "description": "Nama produk. (Max 255)",
+                                                    "type": "string",
+                                                    "example": "test"
+                                                },
+                                                "price": {
+                                                    "description": "Harga produk. (Minimal 1000)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1000
+                                                },
+                                                "quantity": {
+                                                    "description": "Kuantitas. (Minimal 1)",
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Transaksi dan pembayaran berhasil dibuat.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TransactionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Kegagalan sistem internal, gagal menyimpan data, atau kegagalan dari gateway pembayaran.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "oops terjadi kesalahan ketika mencoba mengakses aplikasi pihak kedua"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payment/{id_transaction}": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Cek Status Pembayaran",
+                "description": "Memeriksa status transaksi terkini melalui gateway pembayaran pihak ketiga.",
+                "operationId": "949fda30a867341ec40775b2c11930ba",
+                "parameters": [
+                    {
+                        "name": "id_transaction",
+                        "in": "path",
+                        "description": "ID unik (UUID) dari Transaksi yang ingin diperiksa.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "019a7bfa-cbf2-7365-bac6-e8abc2118838"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pengecekan status berhasil dilakukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Status transaksi saat ini DIBAYAR"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Gagal menghubungi gateway pembayaran atau status transaksi tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaksi tidak ditemukan atau gagal menghubungi API."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "TransactionResponse": {
+                "title": "Successful Transaction Response",
+                "description": "Struktur data respons setelah transaksi berhasil dibuat.",
+                "properties": {
+                    "transaction_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019a7bfa-cbf2-7365-bac6-e8abc2118838"
+                    },
+                    "reference": {
+                        "type": "string",
+                        "example": "DEV-T46885308267E4ICH"
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "example": "BRIVA"
+                    },
+                    "payment_code": {
+                        "type": "string",
+                        "example": "855127573817960"
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "example": "null",
+                        "nullable": true
+                    },
+                    "customer_email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "null",
+                        "nullable": true
+                    },
+                    "customer_phone": {
+                        "type": "string",
+                        "example": "08123456789",
+                        "nullable": true
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15000
+                    },
+                    "expired": {
+                        "description": "Waktu kedaluwarsa dalam format dd/mm/yy H:i:s",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "14/11/25 06:50:25"
+                    },
+                    "order_detail": {
+                        "description": "Daftar produk yang dibeli.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "example": "okok"
+                                },
+                                "price": {
+                                    "type": "number",
+                                    "format": "float",
+                                    "example": 2500
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "example": 4
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "payment_instruction": {
+                        "description": "Langkah-langkah pembayaran.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "Login ke internet banking Bank BRI Anda"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Payment",
+            "description": "Payment"
+        }
+    ]
+}
